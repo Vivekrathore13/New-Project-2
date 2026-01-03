@@ -1,0 +1,19 @@
+{
+  "name": "expense-splitter",
+  "version": "1.0.0",
+  "description": "It is our new project",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [
+    "javascript",
+    "node",
+    "express",
+    "mongodb",
+    "react",
+    "backend"
+  ],
+  "author": "Vivek Rathore",
+  "license": "ISC"
+}
