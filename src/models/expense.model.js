@@ -2,42 +2,45 @@ import mongoose from "mongoose";
 
 const expenseSchema= new mongoose.Schema(
   {
+     groupId: {
+          type: mongoose.Schema.Types.ObjectId,
+          ref: "Group",
+          required: true
+        },
     description:{
-      Type:String,
+      type:String,
       trim:true,
-      index:true,
       required:true
     },
     amount:{
       type:Number,
       required:true,
+      min:1,
     },
     paidBy:{
-      type:Schema.Types.ObjectId,
+      type:mongoose.Schema.Types.ObjectId,
       ref:"User",
       required:true
     },
-    splitamong:{
-      type:Schema.Types.ObjectId,
-      ref:"User"
-    },
-    group: {
-      type: Schema.Types.ObjectId,
-      ref: "Group",
-      required: true
-    },
-    splitAmong: [
+      splitDetails: [
       {
-        type: Schema.Types.ObjectId,
-        ref: "User"
+        user: {
+          type: mongoose.Schema.Types.ObjectId,
+          ref: "User",
+          required:true
+        },
+        share: {
+          type: Number,
+          required: true
+        }
       }
     ],
     splitType: {
       type: String,
-      enum: ["equal", "percentage"],
+      enum: ["equal","percentage","exact","shares"],
       default: "equal"
     }
   },{timestamps:true}
 )
 
-export const expense= mongoose.model("Expense",expenseSchema)
+export const Expense = mongoose.model("Expense",expenseSchema)

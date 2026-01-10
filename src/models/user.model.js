@@ -4,11 +4,9 @@ import bcrypt from "bcrypt"
 
 const userSchema= new mongoose.Schema(
   {
-    username:{
+    fullName:{
       type:String,
-      unique:true,
       trim:true,
-      index:true,
       required:true
     },
     email:{
@@ -18,9 +16,9 @@ const userSchema= new mongoose.Schema(
       lowercase:true,
       trim:true
     },
-    profilePicture:{
-      type:String,
-      required:true
+    isregistered:{
+      type:Boolean,
+      default:false
     },
     password:{
       type:String,
@@ -57,7 +55,7 @@ userSchema.methods.generateAccessToken=function(){
   )
 }
 
-userSchema.methods.refreshToken=function(){
+userSchema.methods.generateRefreshToken=function(){
   return jwt.sign(
     {
       _id:this._id
