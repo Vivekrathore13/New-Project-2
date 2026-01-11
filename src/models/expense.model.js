@@ -22,24 +22,20 @@ const expenseSchema= new mongoose.Schema(
       ref:"User",
       required:true
     },
-      splitDetails: [
-      {
-        user: {
-          type: mongoose.Schema.Types.ObjectId,
-          ref: "User",
-          required:true
-        },
-        share: {
-          type: Number,
-          required: true
-        }
-      }
-    ],
-    splitType: {
-      type: String,
-      enum: ["equal","percentage","exact","shares"],
-      default: "equal"
-    }
+     splitDetails: [
+  {
+    user: { type: mongoose.Schema.Types.ObjectId, ref: "User", required: true },
+
+    amount: { type: Number, required: true,min: 0 },   // ✅ final owed amount
+
+    percent: { type: Number },                  // optional (only for percentage)
+  }
+],
+splitType: {
+  type: String,
+  enum: ["equal", "percentage", "exact"],
+  default: "equal"
+}
   },{timestamps:true}
 )
 

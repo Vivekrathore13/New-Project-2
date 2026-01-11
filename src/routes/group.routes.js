@@ -11,7 +11,7 @@ import {
 } from "../controllers/group.controllers.js";
 
 import { sendInvite, joinGroup, verifyToken } from "../controllers/invite.controllers.js";
-import { body } from "express-validator";
+import { body,param} from "express-validator";
 
 const router = express.Router();
 

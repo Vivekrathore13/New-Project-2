@@ -5,6 +5,7 @@ const app =express()
 
 import userrouter from './routes/user.routes.js'
 import grouprouter from "./routes/group.routes.js"
+import expenserouter from "./routes/expense.routes.js"
 
 app.use(cors(
   {
@@ -20,7 +21,7 @@ app.use(cookieParser());
 
 app.use("/api",userrouter)
 app.use("/api",grouprouter)
-
+app.use("/api",expenserouter)
 
 
 export {app}
