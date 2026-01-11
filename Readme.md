@@ -1,4 +1,4 @@
-# Expense Splitter Backend (Splitwise Clone)
+# Expense Splitter Backend 
 
 <p align="left">
 
@@ -483,5 +483,6 @@ Errors:
 ```
 
 ---
+
 
 
