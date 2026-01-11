@@ -6,7 +6,7 @@ import {
   getSettlementSuggestions,
   createSettlement,
   getSettlementLogs,
-} from "../controllers/settlement.controller.js";
+} from "../controllers/settlement.controllers.js";
 
 const router = Router();
 
