@@ -25,60 +25,35 @@ const generateAccessAndRefereshTokens = async(userId) =>{
 }
 // REGISTER USER CONTROLLER
 const registerUser = asyncHandler(async (req, res) => {
-
   const { fullName, email, password } = req.body;
 
-
+  // ✅ express-validator errors
   const errors = validationResult(req);
-        if (!errors.isEmpty()) {
-            // return res.status(400).json({ error: "Bad Request", errorMessages: errors.array() });
-            throw new ApiError(400, "All fields are required"); 
-        }
-
-  // 1️⃣ validate empty fields
-  // if (
-  //   [fullName, email, password].some(
-  //     (field) => !field || field.trim() === ""
-  //   )
-  // ) {
-  //   throw new ApiError(400, "All fields are required");
-  // }
-
-  // 2️⃣ check existing user by email or username
-  const existedUser = await User.findOne({ email: email.toLowerCase() });
-
-  if (existedUser) {
-    throw new ApiError(
-      409,
-      "User with this email or username already exists"
-    );
+  if (!errors.isEmpty()) {
+    throw new ApiError(400, errors.array()[0].msg);
   }
 
-  // 3️⃣ assume avatar & coverImage uploaded earlier through multer / cloudinary
+  // ✅ check required fields (extra safety)
+  if (![fullName, email, password].every(Boolean)) {
+    throw new ApiError(400, "All fields are required");
+  }
 
+  // ✅ check existing user
+  const existedUser = await User.findOne({ email: email.toLowerCase() });
+  if (existedUser) {
+    throw new ApiError(409, "User with this email already exists");
+  }
 
-
-  // 4️⃣ create user in DB
+  // ✅ create user
   const user = await User.create({
-     fullName :req.body.fullName?.trim(),
-     email : req.body.email?.trim().toLowerCase(),
-     password :req.body.password?.trim(),
-   
+    fullName: fullName.trim(),
+    email: email.trim().toLowerCase(),
+    password: password.trim(),
   });
 
-  // 5️⃣ remove sensitive fields before sending response
-  const createdUser = await User.findById(user._id).select(
-    "-password -refreshToken"
-  );
+  // ✅ remove sensitive fields
+  const createdUser = await User.findById(user._id).select("-password -refreshToken");
 
-  if (!createdUser) {
-    throw new ApiError(
-      500,
-      "Something went wrong while registering the user"
-    );
-  }
-
-  // 6️⃣ final response
   return res.status(201).json(
     new ApiResponse(201, createdUser, "User registered successfully")
   );
@@ -123,7 +98,6 @@ const loginUser = asyncHandler(async (req, res) => {
     secure: false, sameSite: "lax",
 
   };
-  // hi this is my new file
   // 7) send response
   return res
     .status(200)

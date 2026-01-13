@@ -10,7 +10,7 @@ import {
   getMyGroups
 } from "../controllers/group.controllers.js";
 
-import { sendInvite, joinGroup, verifyToken } from "../controllers/invite.controllers.js";
+import { sendInvite, acceptInviteSignup , verifyToken } from "../controllers/invite.controllers.js";
 import { body,param} from "express-validator";
 
 const router = express.Router();
@@ -72,6 +72,7 @@ router.delete(
 /* ----------------------------- INVITE ROUTES ----------------------------- */
 
 // ✅ 8) Send Invite
+// ✅ Send Invite (admin only)
 router.post(
   "/group/:groupId/invite",
   verifyJWT,
@@ -79,17 +80,19 @@ router.post(
   sendInvite
 );
 
-// ✅ 9) Verify Invite Token
+// ✅ Verify Invite Token (Public)
 router.get(
   "/group/invite/verify/:token",
   verifyToken
 );
 
-// ✅ 10) Join group using invite
+// ✅ Accept Invite + Signup + Auto login (Public)
 router.post(
-  "/group/join",
-  verifyJWT,
-  joinGroup
+  "/group/invite/accept",
+  body("token", "Token is required").notEmpty(),
+  body("fullName", "Full name is required").notEmpty(),
+  body("password", "Password is required").notEmpty(),
+  acceptInviteSignup
 );
 
 export default router;

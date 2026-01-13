@@ -114,7 +114,8 @@ const groupMembers = asyncHandler(async (req, res) => {
   if (!group) {
     throw new ApiError(404, "Group not found");
   }
-  const isMember = group.member.some(m => m.equals(userId));
+  const isMember = group.member.some(m => String(m._id) === String(userId));
+
 if(!isMember) throw new ApiError(403, "Access Denied");
 
   return res.status(200).json(
