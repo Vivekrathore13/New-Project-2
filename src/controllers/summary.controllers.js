@@ -155,3 +155,47 @@ export const getDashboardSummary = asyncHandler(async (req, res) => {
     )
   );
 });
+
+export const getGroupSummary = asyncHandler(async (req, res) => {
+  const { groupId } = req.params;
+  const userId = req.user?._id || req.user?.id;
+
+  if (!groupId || !mongoose.isValidObjectId(groupId)) {
+    throw new ApiError(400, "Invalid groupId");
+  }
+
+  const group = await Group.findById(groupId);
+  if (!group) throw new ApiError(404, "Group not found");
+
+  const members = group.member.map((m) => m.toString());
+  if (!members.includes(userId.toString())) {
+    throw new ApiError(403, "You are not a group member");
+  }
+
+  const totalExpenses = await Expense.countDocuments({ groupId });
+  const totalSettlements = await Settlement.countDocuments({ groupId });
+
+  const { balances } = await calculateGroupBalances(groupId);
+
+  const myBal = balances.find((b) => String(b.userId) === String(userId));
+  const myNet = Number(myBal?.net || 0);
+
+  const suggestionCount = 0; // optional: you can compute by calling your suggestion logic
+
+  return res.status(200).json(
+    new ApiResponse(
+      200,
+      {
+        groupId,
+        groupName: group.groupname || group.name,
+        membersCount: members.length,
+        totalExpenses,
+        totalSettlements,
+        suggestionCount,
+        you: { net: myNet },
+      },
+      "Group summary fetched"
+    )
+  );
+});
+
