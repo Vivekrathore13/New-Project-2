@@ -26,7 +26,7 @@ app.use("/api",userrouter)
 app.use("/api",grouprouter)
 app.use("/api",expenserouter)
 app.use("/api",settlementrouter)
-app.use("/api",notificationrouter)
+app.use("/api/notifications", notificationrouter)
 app.use("/api", summaryRoutes);
 
 export {app}

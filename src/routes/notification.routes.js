@@ -4,14 +4,21 @@ import {
   getMyNotifications,
   markNotificationRead,
   markAllRead,
+  deleteNotification,
+  getUnreadCount,
 } from "../controllers/notification.controllers.js";
 
 const router = Router();
 
 router.use(verifyJWT);
 
+// ✅ IMPORTANT: static routes FIRST
+router.get("/unread-count", getUnreadCount);
+router.patch("/read-all", markAllRead);
+
+// ✅ then dynamic routes
 router.get("/", getMyNotifications);
 router.patch("/:notificationId/read", markNotificationRead);
-router.patch("/read-all", markAllRead);
+router.delete("/:notificationId", deleteNotification);
 
 export default router;

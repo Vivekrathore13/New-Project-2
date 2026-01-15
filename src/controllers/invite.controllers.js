@@ -6,6 +6,8 @@ import { Group } from "../models/group.model.js";
 import { Invitation } from "../models/invitation.model.js";
 import { User } from "../models/user.model.js";
 import { sendEmail } from "../utils/sendEmail.js";
+import { sendNotification } from "../utils/notificationHelper.js";
+
 
 
 // ✅ same function as in user.controllers.js (copy here to avoid import confusion)
@@ -98,6 +100,17 @@ export const sendInvite = asyncHandler(async (req, res) => {
     subject: "Expense Splitter - Group Invitation",
     html,
   });
+
+  // ✅ ADD NOTIFICATION (invite sent)
+await sendNotification({
+  userId: req.user._id, // admin ko bhi
+  groupId,
+  type: "INVITE",
+  title: "Invitation Sent",
+  message: `Invite sent to ${normalizedEmail}`,
+  meta: { inviteId: invite._id, email: normalizedEmail, groupId },
+});
+
 
   return res.status(200).json(
     new ApiResponse(
@@ -197,6 +210,27 @@ export const acceptInviteExisting = asyncHandler(async (req, res) => {
   invite.acceptedAt = new Date();
   await invite.save();
 
+  // ✅ NOTIFY USER
+await sendNotification({
+  userId: userId,
+  groupId: group._id,
+  type: "INVITE",
+  title: "Joined group ✅",
+  message: `You joined group successfully`,
+  meta: { groupId: group._id },
+});
+
+// ✅ NOTIFY ADMIN
+await sendNotification({
+  userId: group.admin,
+  groupId: group._id,
+  type: "INVITE",
+  title: "New member joined",
+  message: `${user.fullName} joined your group`,
+  meta: { groupId: group._id, userId },
+});
+
+
   return res
     .status(200)
     .json(new ApiResponse(200, { groupId: group._id }, "Joined group successfully ✅"));
@@ -279,6 +313,27 @@ export const acceptInviteSignup = asyncHandler(async (req, res) => {
     sameSite: "lax",
   };
 
+  // ✅ NOTIFY USER
+await sendNotification({
+  userId: user._id,
+  groupId: group._id,
+  type: "INVITE",
+  title: "Joined group ✅",
+  message: `You joined group successfully`,
+  meta: { groupId: group._id },
+});
+
+// ✅ NOTIFY ADMIN
+await sendNotification({
+  userId: group.admin,
+  groupId: group._id,
+  type: "INVITE",
+  title: "New member joined",
+  message: `${user.fullName} joined your group`,
+  meta: { groupId: group._id, userId: user._id },
+});
+
+
   return res
     .status(201)
     .cookie("accessToken", accessToken, options)
@@ -296,5 +351,7 @@ export const acceptInviteSignup = asyncHandler(async (req, res) => {
       )
     );
 });
+
+
 
   

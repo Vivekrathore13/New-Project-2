@@ -10,6 +10,8 @@ import { validationResult } from "express-validator";
 import { Expense } from "../models/expense.model.js";
 import { response } from "express";
 import {calculateNormalizedSplit} from "../utils/splitCalculator.js"
+import { sendNotification } from "../utils/notificationHelper.js";
+
 
 /*
   Crete Expense set of steps
@@ -130,6 +132,26 @@ if (!errors.isEmpty()) {
   group.totalExpense = Number(group.totalExpense || 0) + totalAmount;
   await group.save({ validateBeforeSave: false });
 
+// ✅ NOTIFICATIONS: send to all members except creator
+for (const memberId of member) {
+  if (memberId.toString() === userId.toString()) continue;
+
+  await sendNotification({
+    userId: memberId,
+    groupId,
+    type: "EXPENSE",
+    title: "New expense added",
+    message: `New expense: ${description.trim()} (₹${totalAmount})`,
+    meta: {
+      expenseId: expense._id,
+      paidBy,
+      amount: totalAmount,
+      groupId,
+    },
+  });
+}
+
+
   // ✅ 14) return
   return res.status(201).json(
     new ApiResponse(201, expense, "Expense created successfully")
@@ -200,12 +222,27 @@ if (
   throw new ApiError(403, "Not allowed");
 }
 
+
+
+
  await Expense.findByIdAndDelete(expenseId)
 
  group.expenseLog.pull(expenseId)
  group.totalExpense -=expense.amount
  await group.save({ validateBeforeSave: false });
 
+// ✅ NOTIFICATIONS: send to members except deleter
+for (const memberId of member) {
+  if (memberId.toString() === userId.toString()) continue;
+
+  await sendNotification({
+    userId: memberId,
+    groupId,
+    type: "EXPENSE",
+    title: "Expense deleted",
+    message: `Expense deleted (₹${expense.amount})`,
+  });
+} 
 
  return res.status(200).json(new ApiResponse(200 ,"Expense deleted successfully"))
 })
@@ -342,6 +379,27 @@ if (!isAdmin && !isPayer) {
   // ✅ apply new expense amount to group
   group.totalExpense = Number(group.totalExpense || 0) + totalAmount;
   await group.save({ validateBeforeSave: false });
+
+
+  // ✅ NOTIFICATIONS: send to members except updater
+for (const memberId of members) {
+  if (memberId.toString() === userId.toString()) continue;
+
+  await sendNotification({
+    userId: memberId,
+    groupId,
+    type: "EXPENSE",
+    title: "Expense updated",
+    message: `Expense updated: ${description.trim()} (₹${totalAmount})`,
+    meta: {
+      expenseId: expense._id,
+      paidBy,
+      amount: totalAmount,
+      groupId,
+    },
+  });
+}
+
 
   return res.status(200).json(
     new ApiResponse(200, expense, "Expense updated successfully")
