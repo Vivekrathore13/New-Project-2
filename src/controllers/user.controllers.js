@@ -169,6 +169,54 @@ if (incomingRefreshToken !== user.refreshToken) {
   }
 });
 
+ const logoutUser = asyncHandler(async (req, res) => {
+  const userId = req.user?._id || req.user?.id;
+
+  if (!userId) {
+    throw new ApiError(401, "Unauthorized User");
+  }
+
+  // ✅ DB refreshToken clear
+  await User.findByIdAndUpdate(
+    userId,
+    { $unset: { refreshToken: 1 } }, // or refreshToken: ""
+    { new: true }
+  );
+
+  // ✅ Clear cookies
+  const options = {
+    httpOnly: true,
+    secure: false,
+    sameSite: "lax",
+  };
+
+  return res
+    .status(200)
+    .clearCookie("accessToken", options)
+    .clearCookie("refreshToken", options)
+    .json(new ApiResponse(200, {}, "User logged out successfully ✅"));
+});
+
+const updateProfile = asyncHandler(async (req, res) => {
+  const userId = req.user?._id || req.user?.id;
+  const { fullName } = req.body;
+
+  if (!userId) throw new ApiError(401, "Unauthorized");
+
+  if (!fullName || !fullName.trim()) {
+    throw new ApiError(400, "Full name is required");
+  }
+
+  const user = await User.findByIdAndUpdate(
+    userId,
+    { fullName: fullName.trim() },
+    { new: true }
+  ).select("-password -refreshToken");
+
+  return res
+    .status(200)
+    .json(new ApiResponse(200, user, "Profile updated successfully ✅"));
+});
 
 
-export { loginUser,registerUser,refreshAcessToken};
+export { loginUser,registerUser,refreshAcessToken,logoutUser,updateProfile};
