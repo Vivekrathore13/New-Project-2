@@ -5,6 +5,8 @@ import { ApiResponse } from "../utils/ApiResponse.js";
 import { Group } from "../models/group.model.js";
 import { Invitation } from "../models/invitation.model.js";
 import { User } from "../models/user.model.js";
+import { sendEmail } from "../utils/sendEmail.js";
+
 
 // ✅ same function as in user.controllers.js (copy here to avoid import confusion)
 const generateAccessAndRefereshTokens = async (userId) => {
@@ -58,7 +60,7 @@ export const sendInvite = asyncHandler(async (req, res) => {
     expiresAt: Date.now() + 2 * 24 * 60 * 60 * 1000, // 2 days
   });
 
-  // ✅ token payload includes inviteId (important)
+  // ✅ token payload includes inviteId
   const payload = {
     inviteId: invite._id,
     groupId,
@@ -74,16 +76,38 @@ export const sendInvite = asyncHandler(async (req, res) => {
 
   const inviteLink = `${process.env.FRONTEND_URL}/join-group?token=${token}`;
 
-  return res
-    .status(200)
-    .json(
-      new ApiResponse(
-        200,
-        { inviteId: invite._id, link: inviteLink },
-        "Invitation generated successfully"
-      )
-    );
+  // ✅ SEND INVITE EMAIL (ONLY ADDED THIS PART)
+  const html = `
+    <div style="font-family: Arial, sans-serif; padding: 16px;">
+      <h2>You are invited to join a group 🎉</h2>
+      <p><b>${req.user.fullName}</b> invited you to join the group.</p>
+      <p>Click below to join:</p>
+      <a href="${inviteLink}"
+         style="display:inline-block;background:#2563eb;color:white;
+                padding:12px 18px;border-radius:10px;text-decoration:none;font-weight:bold;">
+         Join Group
+      </a>
+      <p style="margin-top:16px;color:#64748b;font-size:13px;">
+        This invitation will expire in 2 days.
+      </p>
+    </div>
+  `;
+
+  await sendEmail({
+    to: normalizedEmail,
+    subject: "Expense Splitter - Group Invitation",
+    html,
+  });
+
+  return res.status(200).json(
+    new ApiResponse(
+      200,
+      { inviteId: invite._id, link: inviteLink },
+      "Invitation generated successfully"
+    )
+  );
 });
+
 
 // ✅ 2) VERIFY TOKEN (Public)
 export const verifyToken = asyncHandler(async (req, res) => {
@@ -118,6 +142,66 @@ export const verifyToken = asyncHandler(async (req, res) => {
     )
   );
 });
+
+export const acceptInviteExisting = asyncHandler(async (req, res) => {
+  const { token } = req.body;
+  const userId = req.user?._id;
+
+  if (!token) throw new ApiError(400, "Token is required");
+  if (!userId) throw new ApiError(401, "Unauthorized");
+
+  // ✅ Find invite by token
+  const invite = await Invitation.findOne({ token });
+  if (!invite) throw new ApiError(404, "Invalid or expired invite token");
+
+  if (invite.expiresAt < Date.now()) {
+    throw new ApiError(400, "Invite link expired");
+  }
+
+  if (invite.status !== "PENDING") {
+    throw new ApiError(400, "Invitation already used");
+  }
+
+  // ✅ Find group
+  const group = await Group.findById(invite.groupId);
+  if (!group) throw new ApiError(404, "Group not found");
+
+  // ✅ Ensure logged in user's email matches invited email
+  const user = await User.findById(userId);
+  if (!user) throw new ApiError(404, "User not found");
+
+  if (user.email.toLowerCase() !== invite.email.toLowerCase()) {
+    throw new ApiError(
+      403,
+      "This invite is for a different email. Please login with invited email."
+    );
+  }
+
+  // ✅ If already member
+  const alreadyMember = group.member?.some(
+    (id) => id.toString() === userId.toString()
+  );
+
+  if (alreadyMember) {
+    return res
+      .status(200)
+      .json(new ApiResponse(200, { groupId: group._id }, "Already a member ✅"));
+  }
+
+  // ✅ Add user to group
+  group.member.push(userId);
+  await group.save();
+
+  // ✅ Mark invite accepted
+  invite.status = "ACCEPTED";
+  invite.acceptedAt = new Date();
+  await invite.save();
+
+  return res
+    .status(200)
+    .json(new ApiResponse(200, { groupId: group._id }, "Joined group successfully ✅"));
+});
+
 
 // ✅ 3) ACCEPT INVITE + SIGNUP + AUTO LOGIN (Public)
 export const acceptInviteSignup = asyncHandler(async (req, res) => {
@@ -212,3 +296,5 @@ export const acceptInviteSignup = asyncHandler(async (req, res) => {
       )
     );
 });
+
+  

@@ -10,7 +10,7 @@ import {
   getMyGroups
 } from "../controllers/group.controllers.js";
 
-import { sendInvite, acceptInviteSignup , verifyToken } from "../controllers/invite.controllers.js";
+import { sendInvite, acceptInviteSignup , verifyToken,acceptInviteExisting  } from "../controllers/invite.controllers.js";
 import { body,param} from "express-validator";
 
 const router = express.Router();
@@ -84,6 +84,14 @@ router.post(
 router.get(
   "/group/invite/verify/:token",
   verifyToken
+);
+
+// ✅ Accept Invite for Existing Logged-In User (Protected)
+router.post(
+  "/group/invite/accept-existing",
+  verifyJWT,
+  body("token", "Token is required").notEmpty(),
+  acceptInviteExisting
 );
 
 // ✅ Accept Invite + Signup + Auto login (Public)

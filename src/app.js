@@ -8,6 +8,7 @@ import grouprouter from "./routes/group.routes.js"
 import expenserouter from "./routes/expense.routes.js"
 import  settlementrouter  from "./routes/settlement.routes.js"
 import notificationrouter from "./routes/notification.routes.js"
+import summaryRoutes from "./routes/summary.routes.js";
 
 app.use(cors(
   {
@@ -26,5 +27,6 @@ app.use("/api",grouprouter)
 app.use("/api",expenserouter)
 app.use("/api",settlementrouter)
 app.use("/api",notificationrouter)
+app.use("/api", summaryRoutes);
 
 export {app}
